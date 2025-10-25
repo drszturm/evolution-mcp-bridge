@@ -19,17 +19,29 @@ exclude = [
 ]
 
 # Allow autofix for all enabled rules.
-fixable = ["A", "B", "C", "D", "E", "F", "G", "I", "N", "Q", "S", "T", "W", "UP"]
+fixable = [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "I",
+    "N",
+    "Q",
+    "S",
+    "T",
+    "W",
+    "UP",
+]
 unfixable = []
 
 # Ignore a bunch of rules.
 ignore = [
-    "E501",  # line too long, handled by black
-    "B008",  # do not perform function calls in argument defaults
-    "C901",  # too complex
-    "S101",  # Use of `assert` detected
-    "B904",  # Within an `except` clause, raise exceptions with `raise ... from err`
+    "E501", # line too long, handled by black
+    "B008", # do not perform function calls in argument defaults
+    "C901", # too complex
+    "S101", # Use of `assert` detected
+    "B904", # Within an `except` clause, raise exceptions with `raise ... from err`
 ]
-
-# Respect `# noqa` in more places.
-respect-noqa = true
