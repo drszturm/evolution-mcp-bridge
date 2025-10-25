@@ -8,14 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from config import settings
 from evolution_client import EvolutionClient
 from mcp_client import MCPClient
-from models import (
-    MCPMessage,
-    MCPRequest,
-    SendMediaRequest,
-    SendMessageRequest,
-    WebhookPayload,
-    WppMessage,
-)
+from models import (MCPMessage, MCPRequest, SendMediaRequest,
+                    SendMessageRequest, WebhookPayload, WppMessage)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
