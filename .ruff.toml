@@ -1,9 +1,6 @@
 line-length = 88
 target-version = "py311"
 
-# Enable Pyflakes `F` codes and pycodestyle `E` and `W` codes.
-select = ["E", "W", "F", "I", "B", "C4", "UP"]
-
 # Exclude a variety of commonly ignored directories.
 exclude = [
     ".eggs",
@@ -17,6 +14,10 @@ exclude = [
     "build",
     "dist",
 ]
+
+[lint]
+# Enable Pyflakes `F` codes and pycodestyle `E` and `W` codes.
+select = ["E", "W", "F", "I", "B", "C4", "UP"]
 
 # Allow autofix for all enabled rules.
 fixable = [
