@@ -1,7 +1,9 @@
+from typing import Any, Dict, Optional
+
 import httpx
-from typing import Dict, Any, Optional
-from models import SendMessageRequest, SendMediaRequest
+
 from config import settings
+from models import SendMediaRequest, SendMessageRequest
 
 
 class EvolutionClient:

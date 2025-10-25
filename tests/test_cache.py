@@ -1,9 +1,10 @@
 """Tests for Redis cache manager."""
 
-import pytest
 import json
-from unittest.mock import AsyncMock, patch
 from datetime import datetime
+from unittest.mock import AsyncMock, patch
+
+import pytest
 
 from cache import CacheManager
 from config import settings

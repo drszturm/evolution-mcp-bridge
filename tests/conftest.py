@@ -2,16 +2,17 @@
 
 import asyncio
 from unittest.mock import AsyncMock, Mock
+
 import pytest
 import pytest_asyncio
-from fastapi.testclient import TestClient
 from fakeredis import aioredis
+from fastapi.testclient import TestClient
 
-from main import app
-from evolution_client import EvolutionClient
-from mcp_client import MCPClient
 from cache import CacheManager
 from config import settings
+from evolution_client import EvolutionClient
+from main import app
+from mcp_client import MCPClient
 
 
 @pytest.fixture

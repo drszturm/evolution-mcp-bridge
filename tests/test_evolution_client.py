@@ -1,10 +1,12 @@
 """Tests for Evolution API client."""
 
-import pytest
-import httpx
 from unittest.mock import AsyncMock, patch
+
+import httpx
+import pytest
+
 from evolution_client import EvolutionClient
-from models import SendMessageRequest, SendMediaRequest
+from models import SendMediaRequest, SendMessageRequest
 
 
 class TestEvolutionClient:

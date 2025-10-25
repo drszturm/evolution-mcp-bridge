@@ -1,21 +1,16 @@
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends
+import asyncio
+import logging
+from typing import Any, Dict, List
+
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException
 from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Dict, Any, List
-import logging
-import asyncio
 
-from models import (
-    SendMessageRequest,
-    SendMediaRequest,
-    MCPRequest,
-    MCPMessage,
-    WebhookPayload,
-    WppMessage,
-)
+from config import settings
 from evolution_client import EvolutionClient
 from mcp_client import MCPClient
-from config import settings
+from models import (MCPMessage, MCPRequest, SendMediaRequest,
+                    SendMessageRequest, WebhookPayload, WppMessage)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

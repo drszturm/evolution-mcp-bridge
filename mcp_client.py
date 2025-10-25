@@ -1,7 +1,9 @@
+from typing import Any, Dict, Optional
+
 import httpx
-from typing import Dict, Any, Optional
-from models import MCPRequest, MCPResponse
+
 from config import settings
+from models import MCPRequest, MCPResponse
 
 
 class MCPClient:

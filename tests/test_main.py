@@ -1,12 +1,13 @@
 """Tests for main FastAPI application."""
 
+import json
+from unittest.mock import AsyncMock, patch
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import patch, AsyncMock
-import json
 
 from main import app, conversation_sessions
-from models import SendMessageRequest, SendMediaRequest, MCPRequest
+from models import MCPRequest, SendMediaRequest, SendMessageRequest
 
 
 class TestMainEndpoints:

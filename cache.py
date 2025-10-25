@@ -1,10 +1,11 @@
 """Redis cache implementation for message caching with popularity tracking."""
 
-import json
 import hashlib
-from typing import Any, Dict, Optional, Tuple
-import redis.asyncio as redis
+import json
 from datetime import datetime
+from typing import Any, Dict, Optional, Tuple
+
+import redis.asyncio as redis
 
 from config import settings
 
