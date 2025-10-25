@@ -1,0 +1,59 @@
+name: Lint and Format
+
+on:
+  push:
+    branches: [ "stage", "develop" ]
+  pull_request:
+    branches: [ "stage", "develop" ]
+
+jobs:
+  lint-format:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          
+      - name: Run Black
+        id: black
+        run: |
+          black --check --diff .
+        continue-on-error: false
+        
+      - name: Run Ruff
+        id: ruff
+        run: |
+          ruff check .
+        continue-on-error: false
+          
+      - name: Run Pylint
+        id: pylint
+        run: |
+          pylint main.py models.py config.py evolution_client.py mcp_client.py cache.py tests/
+        continue-on-error: false
+        
+      - name: Run MyPy
+        id: mypy
+        run: |
+          mypy .
+        continue-on-error: false
+        
+      - name: Check code formatting
+        if: steps.black.outcome != 'success' || steps.ruff.outcome != 'success'
+        run: |
+          echo "Code formatting issues detected!"
+          echo "Please run: black . && ruff check --fix ."
+          exit 1

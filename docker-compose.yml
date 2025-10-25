@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  evolution-mcp-bridge:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - EVOLUTION_API_BASE_URL=${EVOLUTION_API_BASE_URL}
+      - EVOLUTION_API_KEY=${EVOLUTION_API_KEY}
+      - MCP_SERVER_URL=${MCP_SERVER_URL}
+      - MCP_API_KEY=${MCP_API_KEY}
+      - HOST=0.0.0.0
+      - PORT=8000
+      - WEBHOOK_URL=${WEBHOOK_URL}
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Include your MCP server if it's also containerized
+  mcp-server:
+    image: your-mcp-server-image:latest
+    ports:
+      - "8001:8000"
+    environment:
+      - MCP_API_KEY=${MCP_API_KEY}
+    restart: unless-stopped
