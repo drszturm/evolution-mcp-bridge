@@ -4,10 +4,10 @@ from datetime import datetime
 
 
 # Evolution API Models
-class EvolutionMessage(BaseModel):
-    key: Optional[dict] = None
-    message: Optional[dict] = None
-    messageType: Optional[str] = None
+class WppMessage(BaseModel):
+    key: Optional[dict]
+    message: dict
+    messageType: str
     webhook_url: Optional[str] = None
 
 

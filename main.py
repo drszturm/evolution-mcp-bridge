@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends
+from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict, Any, List
 import logging
@@ -10,7 +11,7 @@ from models import (
     MCPRequest,
     MCPMessage,
     WebhookPayload,
-    EvolutionMessage,
+    WppMessage,
 )
 from evolution_client import EvolutionClient
 from mcp_client import MCPClient
@@ -20,10 +21,21 @@ from config import settings
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Code to run on startup
+    print("Application startup!")
+    yield
+    # Code to run on shutdown
+    print("Application shutdown!")
+
+
 app = FastAPI(
     title="Evolution API - MCP Bridge",
-    description="Bridge between Evolution API and MCP Server",
+    description="Bridge between Whats App API and MCP Server",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 # CORS middleware
@@ -43,7 +55,6 @@ mcp_client = MCPClient()
 conversation_sessions: Dict[str, List[MCPMessage]] = {}
 
 
-@app.on_event("startup")
 async def startup_event() -> None:
     """Initialize connections on startup"""
     logger.info("Starting Evolution API - MCP Bridge")
@@ -163,18 +174,47 @@ async def process_webhook_message(payload: WebhookPayload) -> None:
 def extract_message_data(webhook_data: Dict[str, Any]) -> Dict[str, Any]:
     """Extract message data from Evolution API webhook payload"""
     try:
-        # Evolution API webhook structure may vary
-        # This is a common structure - adjust based on your Evolution API version
+        if not isinstance(webhook_data, dict):
+            logger.error("Webhook data is not a dictionary")
+            return {}
+
+        # First structure validation
         if "key" in webhook_data and "message" in webhook_data:
+            key_data = webhook_data.get("key", {})
+            message_data = webhook_data.get("message", {})
+
+            if not isinstance(key_data, dict) or not isinstance(message_data, dict):
+                logger.error("Invalid key or message structure")
+                return {}
+
+            if "remoteJid" not in key_data:
+                logger.error("Missing remoteJid in key data")
+                return {}
+
             return {
-                "from": webhook_data["key"]["remoteJid"].replace("@s.whatsapp.net", ""),
-                "text": webhook_data["message"].get("conversation", ""),
+                "from": key_data["remoteJid"].replace("@s.whatsapp.net", ""),
+                "text": message_data.get("conversation", ""),
                 "timestamp": webhook_data.get("messageTimestamp"),
-                "id": webhook_data["key"].get("id"),
+                "id": key_data.get("id"),
             }
+
+        # Second structure validation
         elif "messages" in webhook_data:
-            # Alternative structure
-            message = webhook_data["messages"][0]
+            messages = webhook_data.get("messages", [])
+
+            if not isinstance(messages, list) or not messages:
+                logger.error("Messages field is not a list or is empty")
+                return {}
+
+            message = messages[0]
+            if not isinstance(message, dict):
+                logger.error("Message is not a dictionary")
+                return {}
+
+            if "chatId" not in message:
+                logger.error("Missing chatId in message")
+                return {}
+
             return {
                 "from": message["chatId"].replace("@s.whatsapp.net", ""),
                 "text": message.get("body", ""),
@@ -193,8 +233,8 @@ def extract_message_data(webhook_data: Dict[str, Any]) -> Dict[str, Any]:
 async def chat_with_mcp(request: MCPRequest) -> dict[str, str]:
     """Direct chat endpoint with MCP server"""
     try:
-        response = await mcp_client.send_message(request)
-        return {"status": "success", "data": response.dict()}
+        msg_response = await mcp_client.send_message(request)
+        return {"status": "success", "data": msg_response.response}
     except Exception as e:
         logger.error(f"Error communicating with MCP: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
