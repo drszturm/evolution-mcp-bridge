@@ -1,22 +1,15 @@
-import asyncio
 import logging
-from typing import Any, Dict, List
+from typing import Any
 
-from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException
+from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
 from evolution_client import EvolutionClient
 from mcp_client import MCPClient
-from models import (
-    MCPMessage,
-    MCPRequest,
-    SendMediaRequest,
-    SendMessageRequest,
-    WebhookPayload,
-    WppMessage,
-)
+from models import (MCPMessage, MCPRequest, SendMediaRequest,
+                    SendMessageRequest, WebhookPayload, WppMessage)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -53,7 +46,7 @@ evolution_client = EvolutionClient()
 mcp_client = MCPClient()
 
 # Store conversation sessions
-conversation_sessions: Dict[str, List[MCPMessage]] = {}
+conversation_sessions: dict[str, list[MCPMessage]] = {}
 
 
 async def startup_event() -> None:
@@ -67,7 +60,7 @@ async def root() -> dict[str, str]:
 
 
 @app.get("/health")
-async def health_check() -> Dict[str, Any]:
+async def health_check() -> dict[str, Any]:
     """Health check endpoint"""
     try:  # todo
         mcp_health = {"stable": True}  # await mcp_client.health_check()
@@ -172,7 +165,7 @@ async def process_webhook_message(payload: WebhookPayload) -> None:
         logger.error(f"Error processing webhook message: {str(e)}")
 
 
-def extract_message_data(webhook_data: Dict[str, Any]) -> Dict[str, Any]:
+def extract_message_data(webhook_data: dict[str, Any]) -> dict[str, Any]:
     """Extract message data from Evolution API webhook payload"""
     try:
         if not isinstance(webhook_data, dict):
