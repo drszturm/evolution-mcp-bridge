@@ -8,3 +8,4 @@ redis==5.0.1
 hiredis==2.2.3
 ruff==0.14.2
 isort==7.0.0
+pytest==8.4.2
