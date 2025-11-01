@@ -24,7 +24,7 @@ class EvolutionClient:
             }
 
             response = await client.post(
-                f"{self.base_url}/message/sendText/{request.number}",
+                f"{self.base_url}/message/sendtext/mcp",
                 json=payload,
                 headers=self.headers,
             )
