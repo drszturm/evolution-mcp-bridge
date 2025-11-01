@@ -1,9 +1,11 @@
-from typing import Any, Dict, Optional
-
+from ast import arguments
 import httpx
-
-from config import settings
+from typing import Dict, Any, Optional
+from deepseek_models import DeepSeekMessage
+import deepseek_service
+from mcp_models import CallToolResult, TextContent, ContentType
 from models import MCPRequest, MCPResponse
+from config import settings
 
 
 class MCPClient:
@@ -16,12 +18,14 @@ class MCPClient:
 
     async def send_message(self, request: MCPRequest) -> MCPResponse:
         """Send message to MCP server and get response"""
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{self.base_url}/chat",
-                json=request.dict(),
-                headers=self.headers,
-                timeout=30.0,
-            )
-            response.raise_for_status()
-            return MCPResponse(**response.json())
+        messages = []
+        for msg in request.messages:
+            messages.append(DeepSeekMessage(role="user", content=msg.content))
+        ds_service = deepseek_service.DeepSeekService()
+        result = await ds_service.chat_completion(messages=messages)
+
+        CallToolResult(
+            content=[TextContent(type=ContentType.TEXT, text=result.content)]
+        )
+
+        return MCPResponse(response=result.content)
