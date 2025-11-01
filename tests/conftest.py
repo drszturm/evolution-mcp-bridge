@@ -9,7 +9,6 @@ from fakeredis import aioredis
 from fastapi.testclient import TestClient
 
 from cache import CacheManager
-from config import settings
 from evolution_client import EvolutionClient
 from main import app
 from mcp_client import MCPClient

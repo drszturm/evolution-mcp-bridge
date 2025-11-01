@@ -2,11 +2,10 @@
 
 from unittest.mock import AsyncMock, patch
 
-import httpx
 import pytest
 
 from evolution_client import EvolutionClient
-from models import SendMediaRequest, SendMessageRequest
+from models import SendMessageRequest
 
 
 class TestEvolutionClient:

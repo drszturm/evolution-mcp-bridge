@@ -3,7 +3,7 @@
 import hashlib
 import json
 from datetime import datetime
-from typing import Any, dict, Optional, Tuple
+from typing import Any, dict
 
 import redis.asyncio as redis
 
@@ -15,7 +15,7 @@ class CacheManager:
 
     def __init__(self):
         """Initialize cache manager."""
-        self.redis_client: Optional[redis.Redis] = None
+        self.redis_client: redis.Redis | None = None
         self.cache_enabled = settings.CACHE_ENABLED
 
     async def initialize(self):
@@ -35,7 +35,7 @@ class CacheManager:
             self.cache_enabled = False
 
     def _generate_cache_key(
-        self, message: str, session_id: Optional[str] = None
+        self, message: str, session_id: str | None = None
     ) -> str:
         """Generate a cache key from message content and optional session ID."""
         # Normalize message by removing extra whitespace and converting to lowercase
@@ -60,8 +60,8 @@ class CacheManager:
         return f"{settings.CACHE_PREFIX}:session:{session_id}"
 
     async def get_cached_response(
-        self, message: str, session_id: Optional[str] = None
-    ) -> Optional[Any]:
+        self, message: str, session_id: str | None = None
+    ) -> Any | None:
         """Get cached response for a message."""
         if not self.cache_enabled or not self.redis_client:
             return None
@@ -81,7 +81,7 @@ class CacheManager:
         return None
 
     async def set_cached_response(
-        self, message: str, response: dict[str, Any], session_id: Optional[str] = None
+        self, message: str, response: dict[str, Any], session_id: str | None = None
     ) -> None:
         """Cache a response for a message."""
         if not self.cache_enabled or not self.redis_client:

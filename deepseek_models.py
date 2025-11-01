@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -11,8 +11,8 @@ class DeepSeekMessage(BaseModel):
 class DeepSeekChatRequest(BaseModel):
     model: str = Field(default="deepseek-chat")
     messages: list[DeepSeekMessage]
-    max_tokens: Optional[int] = Field(default=2048, ge=1, le=4096)
-    temperature: Optional[float] = Field(default=0.7, ge=0.0, le=2.0)
+    max_tokens: int | None = Field(default=2048, ge=1, le=4096)
+    temperature: float | None = Field(default=0.7, ge=0.0, le=2.0)
     stream: bool = Field(default=False)
 
 

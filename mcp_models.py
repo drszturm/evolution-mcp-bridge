@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
-from typing import Optional, Any, Union
 from enum import Enum
+from typing import Any, Union
+
+from pydantic import BaseModel
 
 
 class ToolType(str, Enum):
@@ -19,8 +20,8 @@ class TextContent(BaseModel):
 
 class ImageContent(BaseModel):
     type: ContentType = ContentType.IMAGE
-    data: Optional[str] = None
-    mimeType: Optional[str] = None
+    data: str | None = None
+    mimeType: str | None = None
 
 
 Content = Union[TextContent, ImageContent]

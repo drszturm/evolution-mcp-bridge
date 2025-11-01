@@ -14,7 +14,6 @@ from models import (
     SendMediaRequest,
     SendMessageRequest,
     WebhookPayload,
-    WppMessage,
 )
 
 # Configure logging
