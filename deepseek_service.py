@@ -1,11 +1,12 @@
-import httpx
 import logging
+
+import httpx
 
 from config import settings
 from deepseek_models import (
+    ChatCompletion,
     DeepSeekChatRequest,
     DeepSeekMessage,
-    ChatCompletion,
 )
 
 logger = logging.getLogger(__name__)

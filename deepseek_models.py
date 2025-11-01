@@ -1,5 +1,6 @@
+from typing import Any, Optional
+
 from pydantic import BaseModel, Field
-from typing import Optional, Any
 
 
 class DeepSeekMessage(BaseModel):

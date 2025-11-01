@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel
 
@@ -34,7 +34,7 @@ class MCPMessage(BaseModel):
 
 
 class MCPRequest(BaseModel):
-    messages: List[MCPMessage]
+    messages: list[MCPMessage]
     session_id: Optional[str] = None
     context: Optional[dict[str, Any]] = None
 
