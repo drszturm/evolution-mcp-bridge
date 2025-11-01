@@ -170,11 +170,11 @@ async def process_webhook_message(payload: WebhookPayload) -> None:
     except Exception as e:
         logger.error(f"Error processing webhook message: {str(e)}")
         phone_number = message_data.get("from")
-        send_request = SendMessageRequest(
-            number=phone_number, text="erro ao acessar o  agente"
-        )
-
-        await evolution_client.send_message(send_request)
+        if phone_number:
+            send_request = SendMessageRequest(
+                number=str(phone_number), text="erro ao acessar o  agente"
+            )
+            await evolution_client.send_message(send_request)
 
 
 def extract_message_data(webhook_data: dict[str, Any]) -> dict[str, Any]:
