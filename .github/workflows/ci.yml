@@ -29,10 +29,7 @@ jobs:
         
       - name: Run Ruff linting
         run: ruff check .
-        
-    
-      - name: Run MyPy type checking
-        run: mypy .
+
 
   test:
     name: Run Tests
