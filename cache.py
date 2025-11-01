@@ -34,9 +34,7 @@ class CacheManager:
             print(f"❌ Redis connection failed: {e}")
             self.cache_enabled = False
 
-    def _generate_cache_key(
-        self, message: str, session_id: str | None = None
-    ) -> str:
+    def _generate_cache_key(self, message: str, session_id: str | None = None) -> str:
         """Generate a cache key from message content and optional session ID."""
         # Normalize message by removing extra whitespace and converting to lowercase
         normalized_msg = " ".join(message.strip().lower().split())
