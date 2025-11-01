@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Union
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -24,7 +24,7 @@ class ImageContent(BaseModel):
     mimeType: str | None = None
 
 
-Content = Union[TextContent, ImageContent]
+Content = TextContent | ImageContent
 
 
 class ToolDefinition(BaseModel):
