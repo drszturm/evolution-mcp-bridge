@@ -26,7 +26,10 @@ class Settings:
 
     # Webhook Configuration
     WEBHOOK_URL = os.getenv("WEBHOOK_URL", f"http://localhost:{PORT}/webhook")
+    DEEPSEEK_API_KEY = os.getenv("DEEPL_API_KEY", "")
+    DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
 
+    DEEPSEEK_MODEL = "deepseek-chat"
     # Redis Cache Configuration
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
     CACHE_ENABLED = os.getenv("CACHE_ENABLED", "true").lower() == "true"
