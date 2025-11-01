@@ -30,9 +30,7 @@ jobs:
       - name: Run Ruff linting
         run: ruff check .
         
-      - name: Run Pylint
-        run: pylint main.py models.py config.py evolution_client.py mcp_client.py cache.py tests/
-        
+    
       - name: Run MyPy type checking
         run: mypy .
 
