@@ -23,7 +23,7 @@ class DeepSeekService:
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json",
             },
-            timeout=30.0,
+            timeout=120.0,
         )
 
     async def chat_completion(
@@ -34,13 +34,14 @@ class DeepSeekService:
         stream: bool = False,
     ) -> ChatCompletion:
         request_data = DeepSeekChatRequest(
-            model=self.model,
-            messages=messages,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            stream=stream,
+            model="deepseek-chat",
+            messages=[
+                DeepSeekMessage(role="system", content="You are a helpful assistant."),
+            ]
+            + messages,
+            stream=False,
         )
-
+        logger.debug(f"DeepSeek API request data: {request_data.model_dump()}")
         try:
             response = await self.client.post(
                 "/chat/completions", json=request_data.model_dump()
@@ -54,11 +55,10 @@ class DeepSeekService:
                 raise Exception(error_msg)
 
             data = response.json()
-
+            logger.debug(f"DeepSeek API response data: {data}")
             return ChatCompletion(
                 content=data["choices"][0]["message"]["content"],
                 model=data["model"],
-                usage=data["usage"],
             )
 
         except httpx.TimeoutException:

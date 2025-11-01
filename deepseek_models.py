@@ -22,10 +22,8 @@ class DeepSeekChatResponse(BaseModel):
     created: int
     model: str
     choices: list[dict[str, Any]]
-    usage: dict[str, int]
 
 
 class ChatCompletion(BaseModel):
     content: str
     model: str
-    usage: dict[str, int]
