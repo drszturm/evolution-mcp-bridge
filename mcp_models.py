@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any, Union
+from typing import Optional, Any, Union
 from enum import Enum
 
 
@@ -29,20 +29,20 @@ Content = Union[TextContent, ImageContent]
 class ToolDefinition(BaseModel):
     name: str
     description: str
-    inputSchema: Dict[str, Any]
+    inputSchema: dict[str, Any]
 
 
 class CallToolRequest(BaseModel):
     name: str
-    arguments: Dict[str, Any]
+    arguments: dict[str, Any]
 
 
 class CallToolResult(BaseModel):
-    content: List[Content]
+    content: list[Content]
 
 
 class ListToolsResult(BaseModel):
-    tools: List[ToolDefinition]
+    tools: list[ToolDefinition]
 
 
 class PromptMessage(BaseModel):
@@ -51,7 +51,7 @@ class PromptMessage(BaseModel):
 
 
 class GetPromptResult(BaseModel):
-    messages: List[PromptMessage]
+    messages: list[PromptMessage]
 
 
 class ErrorResponse(BaseModel):

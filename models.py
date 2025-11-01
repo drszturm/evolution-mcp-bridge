@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from pydantic import BaseModel
 
@@ -15,7 +15,7 @@ class WppMessage(BaseModel):
 class SendMessageRequest(BaseModel):
     number: str
     text: str
-    options: Optional[Dict[str, Any]] = None
+    options: Optional[dict[str, Any]] = None
 
 
 class SendMediaRequest(BaseModel):
@@ -23,7 +23,7 @@ class SendMediaRequest(BaseModel):
     media: str  # URL or base64
     caption: Optional[str] = None
     fileName: Optional[str] = None
-    options: Optional[Dict[str, Any]] = None
+    options: Optional[dict[str, Any]] = None
 
 
 # MCP Server Models
@@ -36,16 +36,16 @@ class MCPMessage(BaseModel):
 class MCPRequest(BaseModel):
     messages: List[MCPMessage]
     session_id: Optional[str] = None
-    context: Optional[Dict[str, Any]] = None
+    context: Optional[dict[str, Any]] = None
 
 
 class MCPResponse(BaseModel):
     response: str
     session_id: Optional[str] = None
-    context: Optional[Dict[str, Any]] = None
+    context: Optional[dict[str, Any]] = None
 
 
 # Webhook Models
 class WebhookPayload(BaseModel):
     instance: str
-    data: Dict[str, Any]
+    data: dict[str, Any]

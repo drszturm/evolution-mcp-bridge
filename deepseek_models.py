@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
+from typing import Optional, Any
 
 
 class DeepSeekMessage(BaseModel):
@@ -9,7 +9,7 @@ class DeepSeekMessage(BaseModel):
 
 class DeepSeekChatRequest(BaseModel):
     model: str = Field(default="deepseek-chat")
-    messages: List[DeepSeekMessage]
+    messages: list[DeepSeekMessage]
     max_tokens: Optional[int] = Field(default=2048, ge=1, le=4096)
     temperature: Optional[float] = Field(default=0.7, ge=0.0, le=2.0)
     stream: bool = Field(default=False)
@@ -20,11 +20,11 @@ class DeepSeekChatResponse(BaseModel):
     object: str
     created: int
     model: str
-    choices: List[Dict[str, Any]]
-    usage: Dict[str, int]
+    choices: list[dict[str, Any]]
+    usage: dict[str, int]
 
 
 class ChatCompletion(BaseModel):
     content: str
     model: str
-    usage: Dict[str, int]
+    usage: dict[str, int]

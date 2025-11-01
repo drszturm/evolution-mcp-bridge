@@ -1,6 +1,6 @@
 import httpx
 import logging
-from typing import List, Optional, Dict, Any
+
 from config import settings
 from deepseek_models import (
     DeepSeekChatRequest,
@@ -27,7 +27,7 @@ class DeepSeekService:
 
     async def chat_completion(
         self,
-        messages: List[DeepSeekMessage],
+        messages: list[DeepSeekMessage],
         max_tokens: int = 2048,
         temperature: float = 0.7,
         stream: bool = False,

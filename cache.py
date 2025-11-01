@@ -3,7 +3,7 @@
 import hashlib
 import json
 from datetime import datetime
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, dict, Optional, Tuple
 
 import redis.asyncio as redis
 
@@ -81,7 +81,7 @@ class CacheManager:
         return None
 
     async def set_cached_response(
-        self, message: str, response: Dict[str, Any], session_id: Optional[str] = None
+        self, message: str, response: dict[str, Any], session_id: Optional[str] = None
     ) -> None:
         """Cache a response for a message."""
         if not self.cache_enabled or not self.redis_client:
