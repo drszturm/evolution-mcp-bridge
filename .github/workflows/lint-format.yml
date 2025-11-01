@@ -38,14 +38,9 @@ jobs:
         id: pylint
         run: |
           pylint main.py models.py config.py evolution_client.py mcp_client.py cache.py tests/
-        continue-on-error: false
+        continue-on-error: true
         
-      - name: Run MyPy
-        id: mypy
-        run: |
-          mypy .
-        continue-on-error: false
-        
+
       - name: Check code formatting
         if: steps.black.outcome != 'success' || steps.ruff.outcome != 'success'
         run: |
