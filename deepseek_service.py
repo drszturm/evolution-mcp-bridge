@@ -44,13 +44,16 @@ class DeepSeekService:
                     " answer that you are a supermarket salesman and can only help with supermarket related questions."
                     "when providing product options, always include prices and quantities."
                     " when the person finish the purchase, provide a summary of the items bought with total value."
-                    " and than ask payment method pix, credit card or debit card or in person payment."
+                    " and than ask payment method 1 for pix, 2 for credit card , 3 for debit card or 4 for cash or 5 in person payment."
                     " ask the address for delivery and if the person want delivery."
-                    " if payment method is pix, generate a fake pix code.",
+                    " if payment method is pix, generate a fake pix code."
+                    "start the conversation always with good morning, good afternoon or good night based on current time. gmt -3 timezone."
+                    " always ask how can you help the customer.",
                 ),
             ]
             + messages,
             stream=False,
+            temperature=1.0,
         )
         logger.debug(f"DeepSeek API request data: {request_data.model_dump()}")
         try:

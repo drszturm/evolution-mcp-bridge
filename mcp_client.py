@@ -18,7 +18,12 @@ class MCPClient:
         try:
             messages = []
             for msg in request.messages:
-                messages.append(DeepSeekMessage(role="user", content=msg.content))
+                messages.append(
+                    DeepSeekMessage(
+                        role="user",
+                        content=f"<saleto${request.session_id}>\n\n" + msg.content,
+                    )
+                )
             ds_service = deepseek_service.DeepSeekService()
             result = await ds_service.chat_completion(messages=messages)
 
