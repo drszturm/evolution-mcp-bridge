@@ -32,6 +32,7 @@ class DeepSeekService:
         max_tokens: int = 2048,
         temperature: float = 0.7,
         stream: bool = False,
+        prompt: str = "",
     ) -> ChatCompletion:
         request_data = DeepSeekChatRequest(
             model="deepseek-chat",

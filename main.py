@@ -6,8 +6,11 @@ from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
+from deepseek_langchain import DeepSeekLCService
+from deepseek_models import DeepSeekMessage
 from evolution_client import EvolutionClient
 from mcp_client import MCPClient
+from message_service import MessageService
 from models import (
     MCPMessage,
     MCPRequest,
@@ -49,7 +52,8 @@ app.add_middleware(
 # Client instances
 evolution_client = EvolutionClient()
 mcp_client = MCPClient()
-
+message_service = MessageService()
+deepseek_lc_service = DeepSeekLCService()
 # Store conversation sessions
 conversation_sessions: dict[str, list[MCPMessage]] = {}
 
@@ -97,6 +101,21 @@ async def send_media(request: SendMediaRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/lang")
+async def langchain(
+    message: DeepSeekMessage,  # , background_tasks: BackgroundTasks
+) -> dict[str, str]:
+    try:
+        logger.info(f"data: {message}")
+
+        deepseek_lc_service.chat_completion(message)
+
+        return {"status": "received"}
+    except Exception as e:
+        logger.error(f"Error processing webhook: {str(e)}")
+        return {"status": "error", "message": str(e)}
+
+
 @app.post("/webhook")
 async def webhook_handler(
     payload: WebhookPayload, background_tasks: BackgroundTasks
@@ -119,7 +138,7 @@ async def process_webhook_message(payload: WebhookPayload) -> None:
     """Process incoming webhook message and forward to MCP"""
     try:
         # Extract message data from webhook payload
-        message_data = extract_message_data(payload.data)
+        message_data = message_service.extract_message_data(payload.data)
 
         if not message_data or not message_data.get("text"):
             logger.info("No text message found in webhook")
@@ -168,7 +187,7 @@ async def process_webhook_message(payload: WebhookPayload) -> None:
 
     except Exception as e:
         logger.error(f"Error processing webhook message: {str(e)}")
-        phone_number = message_data.get("from")
+        phone_number = message_data.get("from") if message_data is not None else None
         logger.info(f"phone_number: {phone_number}")
         if phone_number:
             send_request = SendMessageRequest(
@@ -176,64 +195,6 @@ async def process_webhook_message(payload: WebhookPayload) -> None:
             )
             response = await evolution_client.send_message(send_request)
             logger.info(f"Error message{response} sent to {phone_number}")
-
-
-def extract_message_data(webhook_data: dict[str, Any]) -> dict[str, Any]:
-    """Extract message data from Evolution API webhook payload"""
-    try:
-        if not isinstance(webhook_data, dict):
-            logger.error("Webhook data is not a dictionary")
-            return {}
-
-        # First structure validation
-        if "key" in webhook_data and "message" in webhook_data:
-            key_data = webhook_data.get("key", {})
-            message_data = webhook_data.get("message", {})
-
-            if not isinstance(key_data, dict) or not isinstance(message_data, dict):
-                logger.error("Invalid key or message structure")
-                return {}
-
-            if "remoteJid" not in key_data:
-                logger.error("Missing remoteJid in key data")
-                return {}
-
-            return {
-                "from": key_data["remoteJid"].replace("@s.whatsapp.net", ""),
-                "text": message_data.get("conversation", ""),
-                "timestamp": webhook_data.get("messageTimestamp"),
-                "id": key_data.get("id"),
-            }
-
-        # Second structure validation
-        elif "messages" in webhook_data:
-            messages = webhook_data.get("messages", [])
-
-            if not isinstance(messages, list) or not messages:
-                logger.error("Messages field is not a list or is empty")
-                return {}
-
-            message = messages[0]
-            if not isinstance(message, dict):
-                logger.error("Message is not a dictionary")
-                return {}
-
-            if "chatId" not in message:
-                logger.error("Missing chatId in message")
-                return {}
-
-            return {
-                "from": message["chatId"].replace("@s.whatsapp.net", ""),
-                "text": message.get("body", ""),
-                "timestamp": message.get("timestamp"),
-                "id": message.get("id"),
-            }
-        else:
-            logger.warning(f"Unknown webhook structure: {webhook_data}")
-            return {}
-    except Exception as e:
-        logger.error(f"Error extracting message data: {str(e)}")
-        return {}
 
 
 @app.post("/chat-with-mcp")
