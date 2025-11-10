@@ -6,18 +6,18 @@ from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
-from deepseek_langchain import DeepSeekLCService
-from deepseek_models import DeepSeekMessage
-from evolution_client import EvolutionClient
-from mcp_client import MCPClient
-from message_service import MessageService
-from models import (
+
+from messaging.evolution_client import EvolutionClient
+from ai.mcp_client import MCPClient
+from messaging.message_service import MessageService
+from messaging.models import (
     MCPMessage,
     MCPRequest,
     SendMediaRequest,
     SendMessageRequest,
     WebhookPayload,
 )
+from messaging.rabbitmq_consumer import EvolutionRabbitMQConsumer
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -53,7 +53,9 @@ app.add_middleware(
 evolution_client = EvolutionClient()
 mcp_client = MCPClient()
 message_service = MessageService()
-deepseek_lc_service = DeepSeekLCService()
+rabbitmq_consumer = EvolutionRabbitMQConsumer(rabbitmq_url=settings.RABBITMQ_URL)
+
+
 # Store conversation sessions
 conversation_sessions: dict[str, list[MCPMessage]] = {}
 
@@ -99,21 +101,6 @@ async def send_media(request: SendMediaRequest):
     except Exception as e:
         logger.error(f"Error sending media: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/lang")
-async def langchain(
-    message: DeepSeekMessage,  # , background_tasks: BackgroundTasks
-) -> dict[str, str]:
-    try:
-        logger.info(f"data: {message}")
-
-        deepseek_lc_service.chat_completion(message)
-
-        return {"status": "received"}
-    except Exception as e:
-        logger.error(f"Error processing webhook: {str(e)}")
-        return {"status": "error", "message": str(e)}
 
 
 @app.post("/webhook")
@@ -187,14 +174,11 @@ async def process_webhook_message(payload: WebhookPayload) -> None:
 
     except Exception as e:
         logger.error(f"Error processing webhook message: {str(e)}")
-        phone_number = message_data.get("from") if message_data is not None else None
-        logger.info(f"phone_number: {phone_number}")
-        if phone_number:
-            send_request = SendMessageRequest(
-                number=str(phone_number), text=f"erro ao acessar o  agente => {str(e)}"
-            )
-            response = await evolution_client.send_message(send_request)
-            logger.info(f"Error message{response} sent to {phone_number}")
+
+        send_request = SendMessageRequest(
+            number=str("5562993434010"), text=f"erro ao acessar o  agente => {str(e)}"
+        )
+        await evolution_client.send_message(send_request)
 
 
 @app.post("/chat-with-mcp")
@@ -238,6 +222,20 @@ async def setup_webhook(instance: str):
     except Exception as e:
         logger.error(f"Error setting up webhook: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+async def main():
+    """Main server loop."""
+
+    async def handle_message_upsert(event_data: dict):
+        """Handle incoming messages."""
+        instance = event_data.get("instance")
+        message = event_data.get("data", {}).get("message")
+
+        logger.info(f"Message upsert event for instance {instance}: {message}")
+        rabbitmq_consumer.register_callback("MESSAGES_UPSERT", handle_message_upsert)
+        rabbitmq_consumer.register_callback("MESSAGES_UPDATE", handle_message_upsert)
+        await rabbitmq_consumer.consume_events(["MESSAGES_UPSERT", "MESSAGES_UPDATE"])
 
 
 if __name__ == "__main__":

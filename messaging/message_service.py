@@ -4,8 +4,8 @@ from typing import Any
 import httpx
 
 from config import settings
-import evolution_client
-from models import SendMediaRequest, SendMessageRequest
+import messaging.evolution_client as evolution_client
+from messaging.models import SendMediaRequest, SendMessageRequest
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

@@ -1,8 +1,8 @@
-import deepseek_service
+import ai.deepseek_web_service as deepseek_web_service
 from config import settings
-from deepseek_models import DeepSeekMessage
-from mcp_models import CallToolResult, ContentType, TextContent
-from models import MCPRequest, MCPResponse
+
+from ai.mcp_models import AgentMessage, CallToolResult, ContentType, TextContent
+from messaging.models import MCPRequest, MCPResponse
 
 
 class MCPClient:
@@ -19,12 +19,12 @@ class MCPClient:
             messages = []
             for msg in request.messages:
                 messages.append(
-                    DeepSeekMessage(
+                    AgentMessage(
                         role="user",
-                        content=f"<saleto${request.session_id}>\n\n" + msg.content,
+                        content=f"<{request.session_id}>\n\n" + msg.content,
                     )
                 )
-            ds_service = deepseek_service.DeepSeekService()
+            ds_service = deepseek_web_service.DeepSeekService()
             result = await ds_service.chat_completion(messages=messages)
 
             CallToolResult(
