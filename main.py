@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Any
 
@@ -5,6 +6,8 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 
+from ai.ai_service import AgentService
+from ai.mcp_models import AgentMessage
 from config import settings
 
 from messaging.evolution_client import EvolutionClient
@@ -24,9 +27,17 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+# Client instances
+evolution_client = EvolutionClient()
+agent_service = AgentService()
+message_service = MessageService()
+rabbitmq_consumer = EvolutionRabbitMQConsumer(rabbitmq_url=settings.RABBITMQ_URL)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Code to run on startup
+    await rabbitmq_consumer.connect()
     print("Application startup!")
     yield
     # Code to run on shutdown
@@ -49,15 +60,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Client instances
-evolution_client = EvolutionClient()
-mcp_client = MCPClient()
-message_service = MessageService()
-rabbitmq_consumer = EvolutionRabbitMQConsumer(rabbitmq_url=settings.RABBITMQ_URL)
-
 
 # Store conversation sessions
-conversation_sessions: dict[str, list[MCPMessage]] = {}
+conversation_sessions: dict[str, list[AgentMessage]] = {}
 
 
 async def startup_event() -> None:
@@ -143,26 +148,15 @@ async def process_webhook_message(payload: WebhookPayload) -> None:
             conversation_sessions[session_id] = []
 
         # Add user message to session
-        user_message = MCPMessage(role="user", content=message_data["text"])
+        user_message = AgentMessage(role="user", content=message_data["text"])
         conversation_sessions[session_id].append(user_message)
 
-        # Prepare MCP request
-        mcp_request = MCPRequest(
-            messages=conversation_sessions[session_id],
-            session_id=session_id,
-            context={"platform": "whatsapp", "phone_number": phone_number},
-        )
-
-        # Get response from MCP server
-        mcp_response = await mcp_client.send_message(mcp_request)
-
+        mcp_response = await agent_service.send(conversation_sessions[session_id])
         # Add assistant response to session
-        assistant_message = MCPMessage(role="assistant", content=mcp_response.response)
+        assistant_message = AgentMessage(
+            role="assistant", content=mcp_response.response
+        )
         conversation_sessions[session_id].append(assistant_message)
-
-        # Keep only last 10 messages to prevent memory issues
-        if len(conversation_sessions[session_id]) > 10:
-            conversation_sessions[session_id] = conversation_sessions[session_id][-10:]
 
         # Send response back via Evolution API
         send_request = SendMessageRequest(
@@ -227,18 +221,9 @@ async def setup_webhook(instance: str):
 async def main():
     """Main server loop."""
 
-    async def handle_message_upsert(event_data: dict):
-        """Handle incoming messages."""
-        instance = event_data.get("instance")
-        message = event_data.get("data", {}).get("message")
-
-        logger.info(f"Message upsert event for instance {instance}: {message}")
-        rabbitmq_consumer.register_callback("MESSAGES_UPSERT", handle_message_upsert)
-        rabbitmq_consumer.register_callback("MESSAGES_UPDATE", handle_message_upsert)
-        await rabbitmq_consumer.consume_events(["MESSAGES_UPSERT", "MESSAGES_UPDATE"])
-
 
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host=settings.HOST, port=settings.PORT, reload=True)
+    # asyncio.run(main())
+    uvicorn.run(main, host=settings.HOST, port=settings.PORT, reload=True)

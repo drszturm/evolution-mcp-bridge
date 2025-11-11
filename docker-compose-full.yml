@@ -42,15 +42,3 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-
-  # Optional: Include your MCP server if it's also containerized
-  mcp-server:
-    image: your-mcp-server-image:latest
-    ports:
-      - "8001:8000"
-    environment:
-      - MCP_API_KEY=${MCP_API_KEY}
-    restart: unless-stopped
-
-volumes:
-  redis_data:

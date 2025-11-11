@@ -1,14 +1,13 @@
 import logging
 from typing import Any
-
-from ai.deepseek_web_service import DeepSeekService
+from ai.deepseek_models import ChatCompletion
+from config import settings
+from ai.mcp_service import DeepSeekService
 from ai.mcp_client import MCPClient
 from ai.mcp_models import AgentMessage
-from config import settings
-from deepseek_models import (
-    ChatCompletion,
-)
-from messaging.models import MCPMessage, MCPRequest
+
+
+from messaging.models import MCPMessage, MCPRequest, MCPResponse
 
 
 class AgentService:
@@ -24,19 +23,18 @@ class AgentService:
         self,
         messages: list[AgentMessage],
         max_tokens: int = 2048,
-        temperature: float = 0.7,
+        temperature: float = 0.4,
         stream: bool = False,
-        prompt: str = "",
-    ) -> ChatCompletion:
+    ) -> MCPResponse:
         result = None
         try:
             request_data = MCPRequest(
-                messages=[MCPMessage(**msg.dict()) for msg in messages],
+                messages=messages,
             )
             agent_result = await self.mcp_client.send_message(request_data)
             if not agent_result.response:
                 raise Exception("Empty response from MCP Client")
-            result = ChatCompletion(content=agent_result.response, model=self.model)
+            result = MCPResponse(response=agent_result.response)
             return result
         except Exception as e:
             self.logger.error(f"Error in MCPClient send_message: {e}")
@@ -46,9 +44,12 @@ class AgentService:
                 max_tokens=max_tokens,
                 temperature=temperature,
                 stream=stream,
-                prompt=prompt,
             )
-            return result
+            constent = ""
+            content = (
+                result.content if isinstance(result, ChatCompletion) else str(result)
+            )
+            return MCPResponse(response=content)
         finally:
             self.logger.error("Error in  chat_completion:")
             raise
@@ -58,4 +59,4 @@ class AgentService:
         pass
 
 
-agent_service = ()
+agent_service = AgentService()

@@ -2,8 +2,12 @@
 
 import json
 from collections.abc import Callable
+import logging
 
 import aio_pika
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class EvolutionRabbitMQConsumer:
@@ -11,6 +15,7 @@ class EvolutionRabbitMQConsumer:
 
     def __init__(self, rabbitmq_url: str):
         """Initialize consumer with RabbitMQ URL and Redis cache."""
+        logger.info("Initializing EvolutionRabbitMQConsumer")
         self.rabbitmq_url = rabbitmq_url
         self.connection = None
         self.channel = None
@@ -18,16 +23,22 @@ class EvolutionRabbitMQConsumer:
 
     async def connect(self):
         """Establish RabbitMQ connection."""
-        self.connection = await aio_pika.connect_robust(self.rabbitmq_url)
-        self.channel = await self.connection.channel()
+        try:
+            logger.info("Estabilishing RabbitMQ connection")
+            self.connection = await aio_pika.connect(self.rabbitmq_url)
+            self.channel = await self.connection.channel()
 
-        exchange = await self.channel.declare_exchange(
-            "evolution_exchange", aio_pika.ExchangeType.TOPIC, durable=True
-        )
-        return exchange
+            exchange = await self.channel.declare_exchange(
+                "wpp", aio_pika.ExchangeType.TOPIC, durable=True
+            )
+            return exchange
+        except Exception as e:
+            logger.error(f"Error connecting to RabbitMQ: {e}")
+            raise
 
     async def consume_events(self, event_types: list):
         """Start consuming specified event types."""
+        logger.info("Starting to consume RabbitMQ events")
         exchange = await self.connect()
         if self.channel is None:
             raise Exception("RabbitMQ channel is not established.")

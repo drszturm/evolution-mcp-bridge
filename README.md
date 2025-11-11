@@ -30,3 +30,4 @@ A FastAPI bridge that connects Evolution API with MCP (Model Context Protocol) s
 pip install -r requirements.txt
 pip install -r requirements-dev.txt  # for development
 ```
+Enable the plugin: Run rabbitmq-plugins enable rabbitmq_management on your server.
