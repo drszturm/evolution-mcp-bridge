@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
-
+from starlette.concurrency import run_in_threadpool
 from ai.ai_service import AgentService
 from ai.mcp_models import AgentMessage
 from config import settings
@@ -37,7 +37,7 @@ rabbitmq_consumer = EvolutionRabbitMQConsumer(rabbitmq_url=settings.RABBITMQ_URL
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Code to run on startup
-    await rabbitmq_consumer.connect()
+    # await rabbitmq_consumer.connect()
     print("Application startup!")
     yield
     # Code to run on shutdown
@@ -118,12 +118,17 @@ async def webhook_handler(
         logger.info(f"Webhook data: {payload.data}")
 
         # Process webhook in background
-        background_tasks.add_task(process_webhook_message, payload)
-
+        # background_tasks.add_task(process_webhook_message, payload)
+        await run_in_threadpool(process, payload)
         return {"status": "received"}
     except Exception as e:
         logger.error(f"Error processing webhook: {str(e)}")
         return {"status": "error", "message": str(e)}
+
+
+def process(payload: WebhookPayload) -> None:
+    """Wrapper to run async process_webhook_message in sync context"""
+    asyncio.run(process_webhook_message(payload))
 
 
 async def process_webhook_message(payload: WebhookPayload) -> None:
@@ -170,20 +175,9 @@ async def process_webhook_message(payload: WebhookPayload) -> None:
         logger.error(f"Error processing webhook message: {str(e)}")
 
         send_request = SendMessageRequest(
-            number=str("5562993434010"), text=f"erro ao acessar o  agente => {str(e)}"
+            number=settings.CONTACT, text=f"erro ao acessar o  agente => {str(e)}"
         )
         await evolution_client.send_message(send_request)
-
-
-@app.post("/chat-with-mcp")
-async def chat_with_mcp(request: MCPRequest) -> dict[str, str]:
-    """Direct chat endpoint with MCP server"""
-    try:
-        msg_response = await mcp_client.send_message(request)
-        return {"status": "success", "data": msg_response.response}
-    except Exception as e:
-        logger.error(f"Error communicating with MCP: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/sessions")

@@ -1,4 +1,4 @@
-import ai.deepseek_web_service as deepseek_web_service
+import ai.mcp_service as mcp_service
 from config import settings
 
 from ai.mcp_models import AgentMessage, CallToolResult, ContentType, TextContent
@@ -24,7 +24,7 @@ class MCPClient:
                         content=f"<{request.session_id}>\n\n" + msg.content,
                     )
                 )
-            ds_service = deepseek_web_service.DeepSeekService()
+            ds_service = mcp_service.DeepSeekService()
             result = await ds_service.chat_completion(messages=messages)
 
             CallToolResult(

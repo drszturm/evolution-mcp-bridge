@@ -43,7 +43,9 @@ class DeepSeekService:
             ]
             + messages,
             stream=False,
-            temperature=1.0,
+            temperature=0.0,
+            presence_penalty=0.0,
+            frequency_penalty=-1.0,
         )
         logger.debug(f"DeepSeek API request data: {request_data.model_dump()}")
         try:

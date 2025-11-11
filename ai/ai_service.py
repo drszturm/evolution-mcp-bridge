@@ -28,16 +28,6 @@ class AgentService:
     ) -> MCPResponse:
         result = None
         try:
-            request_data = MCPRequest(
-                messages=messages,
-            )
-            agent_result = await self.mcp_client.send_message(request_data)
-            if not agent_result.response:
-                raise Exception("Empty response from MCP Client")
-            result = MCPResponse(response=agent_result.response)
-            return result
-        except Exception as e:
-            self.logger.error(f"Error in MCPClient send_message: {e}")
             # Fallback to DeepSeekService
             result = await self.deepseek_service.chat_completion(
                 messages=messages,
@@ -45,13 +35,13 @@ class AgentService:
                 temperature=temperature,
                 stream=stream,
             )
-            constent = ""
+            logging.debug(f"DeepSeekService result: {result}")
             content = (
                 result.content if isinstance(result, ChatCompletion) else str(result)
             )
             return MCPResponse(response=content)
-        finally:
-            self.logger.error("Error in  chat_completion:")
+        except Exception as e:
+            self.logger.error(f"Error in MCPClient send_message: {e}")
             raise
 
     async def close(self):
