@@ -3,6 +3,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from ai.mcp_models import AgentMessage
+
 
 # Evolution API Models
 class WppMessage(BaseModel):
@@ -34,7 +36,7 @@ class MCPMessage(BaseModel):
 
 
 class MCPRequest(BaseModel):
-    messages: list[MCPMessage]
+    messages: list[AgentMessage]
     session_id: str | None = None
     context: dict[str, Any] | None = None
 

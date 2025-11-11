@@ -1,29 +1,43 @@
+import asyncio
 import logging
 from typing import Any
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
-
+from starlette.concurrency import run_in_threadpool
+from ai.ai_service import AgentService
+from ai.mcp_models import AgentMessage
 from config import settings
-from evolution_client import EvolutionClient
-from mcp_client import MCPClient
-from models import (
+
+from messaging.evolution_client import EvolutionClient
+from ai.mcp_client import MCPClient
+from messaging.message_service import MessageService
+from messaging.models import (
     MCPMessage,
     MCPRequest,
     SendMediaRequest,
     SendMessageRequest,
     WebhookPayload,
 )
+from messaging.rabbitmq_consumer import EvolutionRabbitMQConsumer
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+# Client instances
+evolution_client = EvolutionClient()
+agent_service = AgentService()
+message_service = MessageService()
+rabbitmq_consumer = EvolutionRabbitMQConsumer(rabbitmq_url=settings.RABBITMQ_URL)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Code to run on startup
+    # await rabbitmq_consumer.connect()
     print("Application startup!")
     yield
     # Code to run on shutdown
@@ -46,12 +60,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Client instances
-evolution_client = EvolutionClient()
-mcp_client = MCPClient()
 
 # Store conversation sessions
-conversation_sessions: dict[str, list[MCPMessage]] = {}
+conversation_sessions: dict[str, list[AgentMessage]] = {}
 
 
 async def startup_event() -> None:
@@ -107,19 +118,24 @@ async def webhook_handler(
         logger.info(f"Webhook data: {payload.data}")
 
         # Process webhook in background
-        background_tasks.add_task(process_webhook_message, payload)
-
+        # background_tasks.add_task(process_webhook_message, payload)
+        await run_in_threadpool(process, payload)
         return {"status": "received"}
     except Exception as e:
         logger.error(f"Error processing webhook: {str(e)}")
         return {"status": "error", "message": str(e)}
 
 
+def process(payload: WebhookPayload) -> None:
+    """Wrapper to run async process_webhook_message in sync context"""
+    asyncio.run(process_webhook_message(payload))
+
+
 async def process_webhook_message(payload: WebhookPayload) -> None:
     """Process incoming webhook message and forward to MCP"""
     try:
         # Extract message data from webhook payload
-        message_data = extract_message_data(payload.data)
+        message_data = message_service.extract_message_data(payload.data)
 
         if not message_data or not message_data.get("text"):
             logger.info("No text message found in webhook")
@@ -137,26 +153,15 @@ async def process_webhook_message(payload: WebhookPayload) -> None:
             conversation_sessions[session_id] = []
 
         # Add user message to session
-        user_message = MCPMessage(role="user", content=message_data["text"])
+        user_message = AgentMessage(role="user", content=message_data["text"])
         conversation_sessions[session_id].append(user_message)
 
-        # Prepare MCP request
-        mcp_request = MCPRequest(
-            messages=conversation_sessions[session_id],
-            session_id=session_id,
-            context={"platform": "whatsapp", "phone_number": phone_number},
-        )
-
-        # Get response from MCP server
-        mcp_response = await mcp_client.send_message(mcp_request)
-
+        mcp_response = await agent_service.send(conversation_sessions[session_id])
         # Add assistant response to session
-        assistant_message = MCPMessage(role="assistant", content=mcp_response.response)
+        assistant_message = AgentMessage(
+            role="assistant", content=mcp_response.response
+        )
         conversation_sessions[session_id].append(assistant_message)
-
-        # Keep only last 10 messages to prevent memory issues
-        if len(conversation_sessions[session_id]) > 10:
-            conversation_sessions[session_id] = conversation_sessions[session_id][-10:]
 
         # Send response back via Evolution API
         send_request = SendMessageRequest(
@@ -168,83 +173,11 @@ async def process_webhook_message(payload: WebhookPayload) -> None:
 
     except Exception as e:
         logger.error(f"Error processing webhook message: {str(e)}")
-        phone_number = message_data.get("from")
-        logger.info(f"phone_number: {phone_number}")
-        if phone_number:
-            send_request = SendMessageRequest(
-                number=str(phone_number), text=f"erro ao acessar o  agente => {str(e)}"
-            )
-            response = await evolution_client.send_message(send_request)
-            logger.info(f"Error message{response} sent to {phone_number}")
 
-
-def extract_message_data(webhook_data: dict[str, Any]) -> dict[str, Any]:
-    """Extract message data from Evolution API webhook payload"""
-    try:
-        if not isinstance(webhook_data, dict):
-            logger.error("Webhook data is not a dictionary")
-            return {}
-
-        # First structure validation
-        if "key" in webhook_data and "message" in webhook_data:
-            key_data = webhook_data.get("key", {})
-            message_data = webhook_data.get("message", {})
-
-            if not isinstance(key_data, dict) or not isinstance(message_data, dict):
-                logger.error("Invalid key or message structure")
-                return {}
-
-            if "remoteJid" not in key_data:
-                logger.error("Missing remoteJid in key data")
-                return {}
-
-            return {
-                "from": key_data["remoteJid"].replace("@s.whatsapp.net", ""),
-                "text": message_data.get("conversation", ""),
-                "timestamp": webhook_data.get("messageTimestamp"),
-                "id": key_data.get("id"),
-            }
-
-        # Second structure validation
-        elif "messages" in webhook_data:
-            messages = webhook_data.get("messages", [])
-
-            if not isinstance(messages, list) or not messages:
-                logger.error("Messages field is not a list or is empty")
-                return {}
-
-            message = messages[0]
-            if not isinstance(message, dict):
-                logger.error("Message is not a dictionary")
-                return {}
-
-            if "chatId" not in message:
-                logger.error("Missing chatId in message")
-                return {}
-
-            return {
-                "from": message["chatId"].replace("@s.whatsapp.net", ""),
-                "text": message.get("body", ""),
-                "timestamp": message.get("timestamp"),
-                "id": message.get("id"),
-            }
-        else:
-            logger.warning(f"Unknown webhook structure: {webhook_data}")
-            return {}
-    except Exception as e:
-        logger.error(f"Error extracting message data: {str(e)}")
-        return {}
-
-
-@app.post("/chat-with-mcp")
-async def chat_with_mcp(request: MCPRequest) -> dict[str, str]:
-    """Direct chat endpoint with MCP server"""
-    try:
-        msg_response = await mcp_client.send_message(request)
-        return {"status": "success", "data": msg_response.response}
-    except Exception as e:
-        logger.error(f"Error communicating with MCP: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        send_request = SendMessageRequest(
+            number=settings.CONTACT, text=f"erro ao acessar o  agente => {str(e)}"
+        )
+        await evolution_client.send_message(send_request)
 
 
 @app.get("/sessions")
@@ -279,7 +212,12 @@ async def setup_webhook(instance: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+async def main():
+    """Main server loop."""
+
+
 if __name__ == "__main__":
     import uvicorn
 
+    # asyncio.run(main())
     uvicorn.run("main:app", host=settings.HOST, port=settings.PORT, reload=True)

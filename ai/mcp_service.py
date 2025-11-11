@@ -2,12 +2,9 @@ import logging
 
 import httpx
 
+from ai.deepseek_models import ChatCompletion
+from ai.mcp_models import AgentMessage, AgentRequest
 from config import settings
-from deepseek_models import (
-    ChatCompletion,
-    DeepSeekChatRequest,
-    DeepSeekMessage,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -28,18 +25,23 @@ class DeepSeekService:
 
     async def chat_completion(
         self,
-        messages: list[DeepSeekMessage],
+        messages: list[AgentMessage],
         max_tokens: int = 2048,
         temperature: float = 0.7,
         stream: bool = False,
+        prompt: str = "",
     ) -> ChatCompletion:
-        request_data = DeepSeekChatRequest(
+        request_data = AgentRequest(
             model="deepseek-chat",
             messages=[
-                DeepSeekMessage(role="system", content="You are a helpful assistant."),
+                AgentMessage(
+                    role="system",
+                    content="You are a travel assistant. Help the user plan their trips effectively. And with english and spanish translations. when asked for translate",
+                ),
             ]
             + messages,
             stream=False,
+            temperature=0.4,
         )
         logger.debug(f"DeepSeek API request data: {request_data.model_dump()}")
         try:

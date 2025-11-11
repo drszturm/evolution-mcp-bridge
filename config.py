@@ -39,6 +39,8 @@ class Settings:
     # Cache Strategy Configuration
     CACHE_MAX_ENTRIES = int(os.getenv("CACHE_MAX_ENTRIES", "1000"))
     CACHE_POPULAR_THRESHOLD = int(os.getenv("CACHE_POPULAR_THRESHOLD", "5"))
+    RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest:@localhost:15672/")
+    CONTACT = os.getenv("CONTACT", "SUPPORT_NUMBER")
 
 
 settings = Settings()

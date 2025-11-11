@@ -3,7 +3,7 @@ from typing import Any
 import httpx
 
 from config import settings
-from models import SendMediaRequest, SendMessageRequest
+from messaging.models import SendMediaRequest, SendMessageRequest
 
 
 class EvolutionClient:

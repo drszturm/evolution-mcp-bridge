@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from evolution_client import EvolutionClient
-from models import SendMessageRequest
+from messaging.evolution_client import EvolutionClient
+from messaging.models import SendMessageRequest
 
 
 class TestEvolutionClient:
