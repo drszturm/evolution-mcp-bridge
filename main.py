@@ -226,4 +226,4 @@ if __name__ == "__main__":
     import uvicorn
 
     # asyncio.run(main())
-    uvicorn.run(main, host=settings.HOST, port=settings.PORT, reload=True)
+    uvicorn.run("main:app", host=settings.HOST, port=settings.PORT, reload=True)

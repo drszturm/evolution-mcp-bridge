@@ -26,10 +26,11 @@ class EvolutionRabbitMQConsumer:
         try:
             logger.info("Estabilishing RabbitMQ connection")
             self.connection = await aio_pika.connect(self.rabbitmq_url)
+            logger.info("Estabilishing RabbitMQ channel")
             self.channel = await self.connection.channel()
-
+            logger.info("Estabilishing RabbitMQ exchange")
             exchange = await self.channel.declare_exchange(
-                "wpp", aio_pika.ExchangeType.TOPIC, durable=True
+                "wpp", aio_pika.ExchangeType.DIRECT, durable=True
             )
             return exchange
         except Exception as e:
